@@ -1,38 +1,39 @@
-import express from 'express';
-import {createserver} from 'http'
-import {Server} from 'socket.io'
-import {YSocketIO} from 'y-socket.io/dist/server'
+import express from 'express'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
 
 const app = express()
-const httpServer = createserver(app)
+const httpServer = createServer(app)
 
 const io = new Server(httpServer, {
-    cors: {
-        orgin: '*',
-        methods: ['GET', 'POST']
-
-    }
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
 })
 
-const ySocketIO = new YSocketIO(io)
-ySocketIO.initialize()
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id)
 
-
-app.get('/', (req, res)=>{
-    res.status(200).json({
-        message:'Hello ABHISHEK',
-        success:true
-    })
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id)
+  })
 })
 
-app.get('/health',(req, res) => {
-    res.status(200).json({
-        message:'Server is healthy',
-        success:true
-    })
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Hello ABHISHEK',
+    success: true
+  })
 })
 
+app.get('/health', (req, res) => {
+  res.json({
+    message: 'Server is healthy',
+    success: true
+  })
+})
 
-httpServer.listen(3000, ()=>{
-    console.log('Server is running on port 3000')
+httpServer.listen(3000, () => {
+  console.log('Server running on port 3000')
 })
