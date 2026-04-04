@@ -1,7 +1,32 @@
 import React from "react";
 import "./index.css";
 import { Editor } from "@monaco-editor/react";
+import { MonacoBinding } from "y-monaco";
+import { useRef, useMemo } from "react";
+import * as Y from "yjs";
+import { SocketProvider } from "y-socket.io";
+
 function App() {
+  const editorRef = useRef(null);
+  const ydoc = useMemo(() => Y.Doc(), []);
+  const yText = useMemo(() => ydoc.getText("monaco"), [ydoc]);
+
+  const handleMount = (editor) => {
+    editorRef.current = editor;
+
+    const provider = new SocketProvider(
+      "http://localhost:3000",
+      "monaco",
+      ydoc,{autoConnect: true}
+    );
+    const monacoBinding = new MonacoBinding(
+      yText,
+      editorRef.current.getModel(),
+      new Set([editorRef.current]),
+      provider.awareness,
+    );
+  };
+
   return (
     <div>
       <main className="h-screen w-full bg-gray-900 gap-4 p-4 ">
@@ -12,7 +37,8 @@ function App() {
             defaultLanguage="javascript"
             defaultValue="// some comment"
             theme="vs-dark"
-          />
+            OnMount={handleMount}
+          /> 
         </section>
       </main>
     </div>
