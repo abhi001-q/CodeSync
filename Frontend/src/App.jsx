@@ -27,21 +27,24 @@ function App() {
       provider.awareness,
     );
   };
+const handlejoin = {} => {
+  
+}
   if (!username) {
     <main className="h-screen w-full bg-gray-4 items-center justify-center">
-      <div className="flex flex-col gap-4">
-        <input type="text"
-        placeholder="Enter your username"
-        className="p-2 rounded-lg bg-gray-800 text-white"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
+      <form className="flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="Enter your username"
+          className="p-2 rounded-lg bg-gray-800 text-white"
         />
         <button
-        className="p-2 rounded-lg bg"
+          className="p-2 rounded-lg bg-amber-50 text-gray-950 font-bold"
+          onClick={() => {}}
         >
           join
         </button>
-      </div>
+      </form>
     </main>;
   }
 
