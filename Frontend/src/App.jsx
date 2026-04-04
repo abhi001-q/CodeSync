@@ -1,68 +1,111 @@
-import React from "react";
+import React, { useRef, useMemo, useState, useEffect } from "react";
 import "./index.css";
 import { Editor } from "@monaco-editor/react";
 import { MonacoBinding } from "y-monaco";
-import { useRef, useMemo, useState } from "react";
 import * as Y from "yjs";
 import { SocketIOProvider } from "y-socket.io";
 
 function App() {
   const editorRef = useRef(null);
+
+  const [username, setUsername] = useState(() => {
+    return new URLSearchParams(window.location.search).get("username") || "";
+  });
+
+  const [users, setUsers] = useState([]);
+
   const ydoc = useMemo(() => new Y.Doc(), []);
   const yText = useMemo(() => ydoc.getText("monaco"), [ydoc]);
 
   const handleMount = (editor) => {
     editorRef.current = editor;
+  };
 
-    const provider = new SocketProvider(
-      "http://localhost:5173",
+  const handleJoin = (e) => {
+    e.preventDefault();
+    const name = e.target.username.value;
+    setUsername(name);
+    window.history.pushState({}, "", "?username=" + name);
+  };
+
+  useEffect(() => {
+    if (!username || !editorRef.current) return;
+
+    const provider = new SocketIOProvider(
+      "http://localhost:3000", 
       "monaco",
-      ydoc,
-      { autoConnect: true },
+      ydoc
     );
-    const monacoBinding = new MonacoBinding(
+
+    provider.awareness.setLocalStateField("user", { username });
+
+    
+    provider.awareness.on("change", () => {
+      const states = Array.from(provider.awareness.getStates().values());
+
+      const activeUsers = states
+        .map((state) => state.user)
+        .filter((user) => user?.username);
+
+      setUsers(activeUsers);
+    });
+
+    
+    new MonacoBinding(
       yText,
       editorRef.current.getModel(),
       new Set([editorRef.current]),
-      provider.awareness,
+      provider.awareness
     );
-  };
-const handlejoin = {} => {
+
+    return () => {
+      provider.disconnect();
+    };
+  }, [username, ydoc, yText]);
+
   
-}
   if (!username) {
-    <main className="h-screen w-full bg-gray-4 items-center justify-center">
-      <form className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Enter your username"
-          className="p-2 rounded-lg bg-gray-800 text-white"
-        />
-        <button
-          className="p-2 rounded-lg bg-amber-50 text-gray-950 font-bold"
-          onClick={() => {}}
-        >
-          join
-        </button>
-      </form>
-    </main>;
+    return (
+      <main className="flex h-screen w-full bg-gray-900 items-center justify-center">
+        <form onSubmit={handleJoin} className="flex flex-col gap-4">
+          <input
+            name="username" 
+            type="text"
+            placeholder="Enter your username"
+            className="p-2 rounded-lg bg-gray-800 text-white"
+          />
+          <button
+            type="submit"
+            className="p-2 rounded-lg bg-amber-50 text-gray-950 font-bold"
+          >
+            Join
+          </button>
+        </form>
+      </main>
+    );
   }
 
   return (
-    <div>
-      <main className="flex h-screen w-full bg-gray-900 gap-4 p-4 ">
-        <aside className="h-full w-1/4 bg-amber-50 rounded-lg"></aside>
-        <section className="w-3/4 bg-neutral-800 rounded-lg overflow-hidden">
-          <Editor
-            height="100%"
-            defaultLanguage="javascript"
-            defaultValue="// some comment"
-            theme="vs-dark"
-            onMount={handleMount}
-          />
-        </section>
-      </main>
-    </div>
+    <main className="flex h-screen w-full bg-gray-900 gap-4 p-4">
+      {/* Sidebar */}
+      <aside className="h-full w-1/4 bg-amber-50 rounded-lg p-4">
+        <h2 className="font-bold mb-2">Users</h2>
+        {users.map((user, index) => (
+          <p key={index}>{user.username}</p>
+        ))}
+      </aside>
+
+      {/* Editor */}
+      <section className="h-full flex-1 bg-neutral-800 rounded-lg overflow-hidden">
+        <Editor
+          height="100%"
+          defaultLanguage="javascript"
+          defaultValue="// Start coding..."
+          theme="vs-dark"
+          onMount={handleMount}
+        />
+      </section>
+    </main>
   );
 }
 
